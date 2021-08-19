@@ -1,0 +1,196 @@
+Upload the data into HDFS
+Create tables in HIVE from the uploaded data
+Write HIVE queries to get the following results:
+
+create database p1;
+load the data from hive view in movies,ratings and tags tables.
+
+
+01. first 5 entries from movies table
+---> select * from movies LIMIT 5;
+
+
+02. number of unique movies
+---> select count(distinct title) from movies;
+---> SELECT title, COUNT(movieid) 
+FROM movies
+GROUP BY title
+HAVING COUNT(movieid) > 1;
+
+
+03. summary of ratings data
+---> SELECT movieid, count(rating) AS NumberofRatings, min(rating) As MinimumRating,max(rating) AS MaximumRating, round(avg(rating),2) AS OverallRating
+FROM ratings
+GROUP BY movieid;
+
+
+04. minimum rating given to a movie
+---> SELECT  m.title, min(r.rating) As MinimumRating
+FROM ratings as r
+INNER JOIN movies as m
+ON r.movieid = m.movieid
+GROUP BY m.title;
+
+
+05. maximum rating given to a movie
+---> SELECT  m.title, max(r.rating) As MaximumRating
+FROM ratings as r
+INNER JOIN movies as m
+ON r.movieid = m.movieid
+GROUP BY m.title;
+
+
+06. is any row null in tags
+---> SELECT * FROM tags 
+WHERE userid is NULL and movieid is NULL and tag is NULL and time is NULL;
+
+
+07. number of unique tags 
+--->SELECT count(distinct tag) from tags;
+--->SELECT tag, COUNT(userid) 
+FROM tags
+GROUP BY tag
+HAVING COUNT(userid) > 1;
+
+08. drop null rows from tags and create another table of the resulting rows
+--->  CREATE TABLE tagdata AS
+SELECT * FROM tags
+WHERE userid is NOT NULL and movieid is NOT NULL and tag is NOT NULL and time is NOT NULL;
+
+09. filtering to get the list of drama movies
+---> SELECT * FROM movies
+WHERE genres LIKE '%Drama%';
+
+
+10. total number of drama movies
+---> SELECT count(*) FROM movies
+WHERE genres LIKE '%Drama%';
+
+
+11. filtering to get the list of comedy movies
+---> SELECT * FROM movies
+WHERE genres LIKE '%Comedy%';
+
+
+12. total no. of comedy movies
+---> SELECT count(*) FROM movies
+WHERE genres LIKE '%Comedy%';
+
+
+13. search movie id by tag search
+---> SELECT movieid, tag
+FROM tags
+WHERE tag == 'youtube';  //wonder//unreal//toys
+
+
+14. displays first 5 data from ratings table 
+---> select * from ratings LIMIT 5;
+
+
+15. merging two tables movies and ratings into a new table without the "timestamp" column from the ratings table.
+---> create table movr AS
+Select m.movieid, m.title, m.genres, r.userid, r.rating 
+ FROM movies as m
+ FULL OUTER JOIN ratings as r
+ ON m.movieid=r.movieid;
+
+
+16. display high rated movies (rating > 4)
+---> SELECT title, avg(rating) AS OverallRating
+FROM movr
+GROUP BY title
+HAVING avg(rating) > 4;
+
+
+17. display low rated movies (rating < 4)
+--> SELECT title, avg(rating) AS OverallRating
+FROM movr
+GROUP BY title
+HAVING avg(rating) < 4;
+
+
+18. total number of unique movie genres
+---> select count(distinct genre) 
+from (select explode(split(genres, '\\|')) as genre from movies) as g
+where genre != "(no genres listed)";
+
+
+19. top 25 most rated movies
+--> SELECT title, count(rating) AS RatingCount
+From movr
+Group by title
+ORDER BY RatingCount DESC
+LIMIT 25;
+
+
+20. slicing out columns to display only title and genres columns from movies table
+---> select title, genres from movies;
+
+
+21. extract year from title of the movie
+---> select regexp_extract(title,"\\([0-9](.*)",0)) as year from movies;
+
+
+22. count how many times each of genres occur
+---> select genre, count(genre) from 
+(select explode(split(genres, '\\|')) as genre from movies) as g
+Group by genre
+where genre != "(no genres listed)";
+
+
+23. Which movie received the highest number of ratings?
+---> SELECT title, count(rating) AS RatingCount
+From movr
+Group by title
+ORDER BY RatingCount DESC
+LIMIT 1;
+
+
+
+
+
+
+CREATE TABLE movies (movieid int, title string, genres string)
+row format delimited
+fields terminated by ',';
+
+LOAD DATA INPATH '/Project1/movies/movies.csv'
+INTO TABLE movies
+
+
+
+
+create external table movies (movieid int, title string) 
+lines terminated by '\n' 
+location '/Project1/movies’ 
+tblproperties ("skip.header.line.count"="1");
+
+
+set hive.exec.dynamic.partition=true;
+set hive.exec.dynamic.partition.mode=nonstrict;
+
+CREATE TABLE movies (movieid int, title string)
+Partitioned by(genres string)
+row format delimited
+fields terminated by ',';
+
+INSERT INTO movies
+partition(genres)
+SELECT movieid, title, genres
+FROM p1.movies;
+
+
+set hive.enforce.bucketing = true;
+
+CREATE TABLE ratings (userid int, movieid int, rating float, time string)
+CLUSTERED BY (userid) INTO 3 Buckets
+row format delimited
+fields terminated by ',';
+
+INSERT OVERWRITE TABLE ratings
+SELECT * FROM p1.ratings;
+
+
+
+SELECT count(*) FROM movies
+WHERE array_contains(split(genres, '\\|'), 'Comedy');
