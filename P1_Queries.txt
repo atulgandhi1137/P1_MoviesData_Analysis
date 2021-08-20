@@ -2,9 +2,6 @@ Upload the data into HDFS
 Create tables in HIVE from the uploaded data
 Write HIVE queries to get the following results:
 
-create database p1;
-load the data from hive view in movies,ratings and tags tables.
-
 
 01. first 5 entries from movies table
 ---> select * from movies LIMIT 5;
@@ -145,52 +142,3 @@ Group by title
 ORDER BY RatingCount DESC
 LIMIT 1;
 
-
-
-
-
-
-CREATE TABLE movies (movieid int, title string, genres string)
-row format delimited
-fields terminated by ',';
-
-LOAD DATA INPATH '/Project1/movies/movies.csv'
-INTO TABLE movies
-
-
-
-
-create external table movies (movieid int, title string) 
-lines terminated by '\n' 
-location '/Project1/movies’ 
-tblproperties ("skip.header.line.count"="1");
-
-
-set hive.exec.dynamic.partition=true;
-set hive.exec.dynamic.partition.mode=nonstrict;
-
-CREATE TABLE movies (movieid int, title string)
-Partitioned by(genres string)
-row format delimited
-fields terminated by ',';
-
-INSERT INTO movies
-partition(genres)
-SELECT movieid, title, genres
-FROM p1.movies;
-
-
-set hive.enforce.bucketing = true;
-
-CREATE TABLE ratings (userid int, movieid int, rating float, time string)
-CLUSTERED BY (userid) INTO 3 Buckets
-row format delimited
-fields terminated by ',';
-
-INSERT OVERWRITE TABLE ratings
-SELECT * FROM p1.ratings;
-
-
-
-SELECT count(*) FROM movies
-WHERE array_contains(split(genres, '\\|'), 'Comedy');
