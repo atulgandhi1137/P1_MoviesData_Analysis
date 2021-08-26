@@ -13,7 +13,7 @@ This project analyzes the movies data to get the
 - top rated movies.
 - low rated movies. etc
 
-To-do list:
+## To-do list:
 - Partitioning and bucketing on tables
 - More queries to be added
 
