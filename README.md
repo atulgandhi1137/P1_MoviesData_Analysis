@@ -5,8 +5,8 @@ This project aims to analyse movies data by using Apache Hive .
 ## Technologies Used
 Apache Hive - version 2.1.1
 
-## Features
-# List of features
+# Features
+## List of features
 This project analyzes the movies data to get the 
 - movies of specific genre. 
 - movies which got most ratings.
